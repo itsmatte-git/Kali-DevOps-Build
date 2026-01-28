@@ -39,9 +39,9 @@
       - name: Install Visual Studio Code
         apt:
           deb: https://go.microsoft.com/fwlink/?LinkID=760868
-        rescue:
-          - debug:
-              msg: "VS Code download failed (network or URL issue). Skipping."
+      rescue:
+        - debug:
+            msg: "VS Code download failed (network or URL issue). Skipping."
 
 
     - name: Copy ZSH profile                                                                
