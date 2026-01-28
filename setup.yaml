@@ -11,27 +11,23 @@
             name: "{{ item }}"
             state: present
           loop:
-            - python3-venv
-            - bloodhound
-            - filezilla
-            - remmina
-            - docker.io
-            - gobuster
-            - seclists
-            - feroxbuster
-            - oscanner
-            - redis-tools
-            - sipvicious
-            - tnscmd10g
-            - wkhtmltopdf
-            - xclip
-            - chisel
-            - mingw-w64
-            - guake
-            - dconf-cli
-            - gnome-font-viewer
+            - python3-venv                # python virtual env
+            - bloodhound                  # AD attack path tool
+            - filezilla                   # GUI FTP/SFTP client
+            - remmina                     # Remote desktop client (RDP, VNC, SSH)
+            - docker.io                   # Docker engine
+            - gobuster                    # Directory brute force tool
+            - seclists                    # Wordlist collection
+            - feroxbuster                 # Content discovery tool
+            - redis-tools                 # CLI tool for Redis
+            - xclip                       # Clipboard access from terminal
+            - chisel                      # TCP tunnel / pivoting tool
+            - mingw-w64                   # Windows cross-compiler
+            - guake                       # Drop-down terminal emulator
+            - dconf-cli                   # GNOME/XFCE config tool
+            - gnome-font-viewer           # Font preview tool
 
-      rescue:
+      rescue:                                                                               # Logs warning and continues execution when package install fails
         - name: Warn about failed package install
           debug:
             msg: >
@@ -39,12 +35,16 @@
               This is expected on Kali rolling.
               Continuing with remaining setup.
 
+    - block:                                                                                # VS Code install
     - name: Install Visual Studio Code
       apt:
-        deb: https://az764295.vo.msecnd.net/stable/30d9c6cd9483b2cc586687151bcbcd635f373630/code_1.68.1-1655263094_amd64.deb
-      ignore_errors: true
+        deb: https://go.microsoft.com/fwlink/?LinkID=760868
+      rescue:
+        - debug:
+            msg: "VS Code download failed (network or URL issue). Skipping."
 
-    - name: Copy ZSH profile
+
+    - name: Copy ZSH profile                                                                
       copy:
         src: /home/kali/Kali-DevOps-Build/config/.zshrc
         dest: /home/kali/.zshrc
@@ -107,15 +107,16 @@
         group: kali
         mode: '0777'
 
-    - name: Download tools
+    - name: Download tools                                                              # Download tools
       get_url:
         url: "{{ item.url }}"
         dest: "{{ item.dest }}"
         mode: '0755'
       loop:
-        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy32, dest: /home/kali/share/pspy32 }
-        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy64, dest: /home/kali/share/pspy64 }
-        - { url: https://github.com/carlospolop/PEASS-ng/releases/download/20220703/linpeas.sh, dest: /home/kali/share/linpeas.sh }
+        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy32, dest: /home/kali/share/pspy32 }                      # pspy32
+        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy64, dest: /home/kali/share/pspy64 }                      # pspy64
+        - { url: https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh, dest: /home/kali/share/linpeas.sh }             # Linpeas
+        - { url: https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEAS.bat, dest: /home/kali/share/winpeas.bay}            # Winpeas
 
     - name: Download Meslo fonts
       get_url:
