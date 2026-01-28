@@ -1,171 +1,152 @@
 ---
 - hosts: localhost
+  connection: local
   become: true
 
-- block:
-    - name: Install packages
-      package:
-        name: "{{ item }}"
-        state: present
+  tasks:
+
+    - block:
+        - name: Install packages
+          package:
+            name: "{{ item }}"
+            state: present
+          loop:
+            - python3-venv
+            - bloodhound
+            - filezilla
+            - remmina
+            - docker.io
+            - gobuster
+            - seclists
+            - feroxbuster
+            - oscanner
+            - redis-tools
+            - sipvicious
+            - tnscmd10g
+            - wkhtmltopdf
+            - xclip
+            - chisel
+            - mingw-w64
+            - guake
+            - dconf-cli
+            - gnome-font-viewer
+
+      rescue:
+        - name: Warn about failed package install
+          debug:
+            msg: >
+              One or more packages failed to install.
+              This is expected on Kali rolling.
+              Continuing with remaining setup.
+
+    - name: Install Visual Studio Code
+      apt:
+        deb: https://az764295.vo.msecnd.net/stable/30d9c6cd9483b2cc586687151bcbcd635f373630/code_1.68.1-1655263094_amd64.deb
+      ignore_errors: true
+
+    - name: Copy ZSH profile
+      copy:
+        src: /home/kali/Kali-DevOps-Build/config/.zshrc
+        dest: /home/kali/.zshrc
+        owner: kali
+        group: kali
+        mode: '0644'
+
+    - name: Copy Tmux profile
+      copy:
+        src: /home/kali/Kali-DevOps-Build/config/.tmux.conf
+        dest: /home/kali/.tmux.conf
+        owner: kali
+        group: kali
+        mode: '0644'
+
+    - name: Copy p10k profile
+      copy:
+        src: /home/kali/Kali-DevOps-Build/config/.p10k.zsh
+        dest: /home/kali/.p10k.zsh
+        owner: kali
+        group: kali
+        mode: '0644'
+
+    - name: Copy ctf script
+      copy:
+        src: /home/kali/Kali-DevOps-Build/scripts/ctf
+        dest: /usr/local/sbin/ctf
+        owner: kali
+        group: kali
+        mode: '0777'
+
+    - name: Clone tmux plugin manager
+      git:
+        repo: https://github.com/tmux-plugins/tpm
+        dest: /home/kali/.tmux/plugins/tpm
+        update: yes
+
+    - name: Clone powerlevel10k
+      git:
+        repo: https://github.com/romkatv/powerlevel10k.git
+        dest: /home/kali/powerlevel10k
+        update: yes
+
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: kali
+        group: kali
       loop:
-        - python3-venv
-        - bloodhound
-        - filezilla
-        - remmina
-        - docker.io
-        - gobuster
-        - seclists
-        - feroxbuster
-        - oscanner
-        - redis-tools
-        - sipvicious
-        - tnscmd10g
-        - wkhtmltopdf
-        - xclip
-        - chisel
-        - mingw-w64
-        - guake
-        - dconf-cli
-        - gnome-font-viewer
+        - /home/kali/.local/share/fonts
+        - /home/kali/share
+        - /home/kali/scripts
 
-  rescue:
-    - name: Warn about failed package install
-      debug:
-        msg: >
-          One or more packages failed to install.
-          This is expected on Kali rolling.
-          Continuing with remaining setup.
+    - name: Copy ipaddress script
+      copy:
+        src: /home/kali/Kali-DevOps-Build/scripts/ipaddress.sh
+        dest: /home/kali/scripts/ipaddress.sh
+        owner: kali
+        group: kali
+        mode: '0777'
 
-- name: Install Visual Studio
-  apt:
-    deb: https://az764295.vo.msecnd.net/stable/30d9c6cd9483b2cc586687151bcbcd635f373630/code_1.68.1-1655263094_amd64.deb
+    - name: Download tools
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+        mode: '0755'
+      loop:
+        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy32, dest: /home/kali/share/pspy32 }
+        - { url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy64, dest: /home/kali/share/pspy64 }
+        - { url: https://github.com/carlospolop/PEASS-ng/releases/download/20220703/linpeas.sh, dest: /home/kali/share/linpeas.sh }
 
-- name: Copy a ZSH profile
-  ansible.builtin.copy:
-    src: /home/kali/Kali-DevOps-Build/config/.zshrc
-    dest: /home/kali/.zshrc
-    owner: kali
-    group: kali
-    mode: '0644'
+    - name: Download Meslo fonts
+      get_url:
+        url: "{{ item }}"
+        dest: "/home/kali/.local/share/fonts/{{ item | basename }}"
+      loop:
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+        - https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
 
-- name: Copy a Tmux profile
-  ansible.builtin.copy:
-    src: /home/kali/Kali-DevOps-Build/config/.tmux.conf
-    dest: /home/kali/.tmux.conf
-    owner: kali
-    group: kali
-    mode: '0644'
+    - name: Fix ownerships
+      file:
+        path: "{{ item }}"
+        recurse: yes
+        owner: kali
+        group: kali
+      loop:
+        - /home/kali/.tmux
+        - /home/kali/powerlevel10k
+        - /home/kali/scripts
+        - /home/kali/share
 
-- name: Copy a p10k profile
-  ansible.builtin.copy:
-    src: /home/kali/Kali-DevOps-Build/config/.p10k.zsh
-    dest: /home/kali/.p10k.zsh
-    owner: kali
-    group: kali
-    mode: '0644'
+    - name: Start Guake
+      command: su -c 'guake &' kali
+      ignore_errors: true
 
-- name: Copy ctf script
-  ansible.builtin.copy:
-    src: /home/kali/Kali-DevOps-Build/scripts/ctf
-    dest: /usr/local/sbin/ctf
-    owner: kali
-    group: kali
-    mode: '0777'
+    - name: Configure Guake
+      command: su -c 'guake --restore-preferences=/home/kali/Kali-DevOps-Build/config/guake.conf' kali
+      ignore_errors: true
 
-- name: Clone tmux-plugin tpm github repository
-  git:
-    repo: https://github.com/tmux-plugins/tpm
-    dest: /home/kali/.tmux/plugins/tpm
-    clone: yes
-    update: yes
-
-- name: Clone powerlevel10k github repository
-  git:
-    repo: https://github.com/romkatv/powerlevel10k.git
-    dest: /home/kali/powerlevel10k
-    clone: yes
-    update: yes
-
-- name: Create directory for font files
-  file:
-    path: /home/kali/.local/share/fonts
-    state: directory
-
-- name: Create directory for share
-  file:
-    path: /home/kali/share
-    state: directory
-
-- name: Create directory for scripts
-  file:
-    path: /home/kali/scripts
-    state: directory
-
-- name: Copy ipaddress script
-  ansible.builtin.copy:
-    src: /home/kali/Kali-DevOps-Build/scripts/ipaddress.sh
-    dest: /home/kali/scripts/ipaddress.sh
-    owner: kali
-    group: kali
-    mode: '0777'
-
-- name: Download & Install pspy32
-  get_url:
-    url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy32
-    dest: '/home/kali/share/pspy32'
-
-- name: Download & Install pspy64
-  get_url:
-    url: https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy64
-    dest: '/home/kali/share/pspy64'
-
-- name: Download & Install linpeas
-  get_url:
-    url: https://github.com/carlospolop/PEASS-ng/releases/download/20220703/linpeas.sh
-    dest: '/home/kali/share/linpeas.sh'
-
-- name: Download & Install MesloLGS NF Regular.ttf
-  get_url:
-    url: https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-    dest: '/home/kali/.local/share/fonts/MesloLGS NF Regular.ttf'
-
-- name: Download & Install MesloLGS NF Bold.ttf
-  get_url:
-    url: https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-    dest: '/home/kali/.local/share/fonts/MesloLGS NF Bold.ttf'
-
-- name: Download & Install MesloLGS NF Italic.ttf
-  get_url:
-    url: https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-    dest: '/home/kali/.local/share/fonts/MesloLGS NF Italic.ttf'
-- name: Download & Install MesloLGS NF Bold Italic.ttf
-  get_url:
-    url: https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-    dest: '/home/kali/.local/share/fonts/MesloLGS NF Bold Italic.ttf'
-
-- name: Change permissions of .tmux folder
-  command: chown -R kali:kali /home/kali/.tmux/
-
-- name: Change permissions of powerlevel10k folder
-  command: chown -R kali:kali /home/kali/powerlevel10k/
-
-- name: Change permissions of scripts folder
-  command: chown -R kali:kali /home/kali/scripts/
-
-- name: Change permissions of share folder
-  command: chown -R kali:kali /home/kali/share/
-
-- name: Change permissions of share pspy32
-  command: chmod +x /home/kali/share/pspy32
-
-- name: Change permissions of share pspy64
-  command: chmod +x /home/kali/share/pspy64
-
-- name: Start Guake Terminal
-  command: su -c 'guake &' kali
-
-- name: Configure Guake Terminal
-  command: su -c 'guake --restore-preferences=/home/kali/Kali-DevOps-Build/config/guake.conf' kali
-
-- name: Set Timezone
-  command: timedatectl set-timezone Australia/Sydney
+    - name: Set timezone
+      timezone:
+        name: Australia/Sydney
